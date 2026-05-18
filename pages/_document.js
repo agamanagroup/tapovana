@@ -6,8 +6,8 @@ export default function Document() {
       <Head>
         <meta charSet="UTF-8" />
         <meta name="description" content="Tapovana Live Plot Availability – Real-time farmland plot status in Malnad, Karnataka" />
-        <meta property="og:title" content="Tapovana – Live Plot Availability" />
-        <meta property="og:description" content="Real-time farmland plot availability in the heart of Malnad's pristine landscape." />
+        <meta property="og:title" content="Tapovana Farmland – Live Plot Availability" />
+        <meta property="og:description" content="Live plot availability at Tapovana Farmland, Lingadahalli, Sagara, Karnataka's pristine landscape." />
         <meta name="theme-color" content="#193319" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

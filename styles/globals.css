@@ -116,3 +116,35 @@
   animation: shimmer 1.5s infinite linear;
   border-radius: 4px;
 }
+
+/* Fix #9 — Mobile responsiveness improvements */
+@media (max-width: 640px) {
+  /* Tighter stat cards on mobile */
+  .stat-card {
+    @apply p-4;
+  }
+
+  /* Full-width enquire button easy to tap */
+  .enquire-btn {
+    @apply w-full justify-center py-3 text-sm min-h-[48px];
+  }
+
+  /* Filter pills scrollable, no wrap */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Larger badge text on mobile */
+  .badge-available,
+  .badge-booked,
+  .badge-reserved {
+    @apply text-xs px-2.5 py-1;
+  }
+}
+
+/* Safe area insets for notch phones */
+@supports (padding: env(safe-area-inset-left)) {
+  .main-content {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}

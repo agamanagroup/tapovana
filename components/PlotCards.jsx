@@ -1,9 +1,17 @@
 /**
  * components/PlotCards.jsx
- * Mobile card view — each plot becomes a premium card.
+ * Fix #5 — removed # row number
+ * Fix #6 — Booked = full red card background
+ * Fix #9 — highly mobile responsive with better spacing & touch targets
  */
 import StatusBadge from "./StatusBadge";
 import { buildWhatsAppUrl } from "../lib/fetchSheets";
+
+const WA_ICON = (
+  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
 
 export default function PlotCards({ plots, headers }) {
   if (plots.length === 0) {
@@ -12,7 +20,7 @@ export default function PlotCards({ plots, headers }) {
         <div className="w-16 h-16 rounded-full bg-forest-50 flex items-center justify-center mb-4">
           <svg className="w-8 h-8 text-forest-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
         </div>
         <p className="text-forest-600 font-medium font-display text-lg">No plots found</p>
@@ -23,84 +31,105 @@ export default function PlotCards({ plots, headers }) {
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      {plots.map((plot, idx) => (
-        <div
-          key={plot._id}
-          className={`plot-card rounded-2xl border overflow-hidden shadow-card
-            transition-all duration-300 hover:shadow-card-hover
-            ${plot.status === "Booked" ? "border-red-100 opacity-80" : "border-forest-100"}
-            ${plot.status === "Reserved" ? "border-amber-100" : ""}
-            ${plot.status === "Available" ? "border-forest-100" : ""}
-            bg-white
-          `}
-        >
-          {/* Card header */}
+      {plots.map((plot) => {
+        const isBooked   = plot.status === "Booked";
+        const isReserved = plot.status === "Reserved";
+        const isAvail    = plot.status === "Available";
+
+        return (
           <div
-            className={`px-4 py-3 flex items-center justify-between
-              ${plot.status === "Available" ? "bg-forest-900" : ""}
-              ${plot.status === "Booked" ? "bg-red-900" : ""}
-              ${plot.status === "Reserved" ? "bg-amber-800" : ""}
+            key={plot._id}
+            className={`plot-card rounded-2xl overflow-hidden shadow-card transition-all duration-300
+              ${isBooked   ? "border-2 border-red-300"    : ""}
+              ${isReserved ? "border-2 border-amber-300"  : ""}
+              ${isAvail    ? "border border-forest-100"   : ""}
             `}
           >
-            <div className="flex items-center gap-2">
-              <span className="text-white/50 text-xs font-mono">#{idx + 1}</span>
-              <span className="text-white font-display text-lg font-medium">
-                {/* Try to show plot name or number prominently */}
-                {plot["Plot Name"] || plot["Plot No"] || plot["Name"] || `Plot ${idx + 1}`}
+            {/* Card header strip */}
+            <div className={`px-4 py-3 flex items-center justify-between
+              ${isAvail    ? "bg-forest-900"  : ""}
+              ${isBooked   ? "bg-red-700"     : ""}
+              ${isReserved ? "bg-amber-700"   : ""}
+            `}>
+              {/* Fix #5 — no # number, just plot name */}
+              <span className="text-white font-display text-lg font-medium leading-tight">
+                {plot["Plot Name"] || plot["Name"] || plot["Plot No"] || "Plot"}
               </span>
+              <StatusBadge status={plot.status}/>
             </div>
-            <StatusBadge status={plot.status} />
-          </div>
 
-          {/* Card body — all columns as label:value pairs */}
-          <div className="px-4 py-4">
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-              {headers.map((header) => {
-                const val = plot[header];
-                if (!val || val.trim() === "") return null;
-                return (
-                  <div key={header} className="col-span-1">
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-forest-400 mb-0.5">
-                      {header}
-                    </dt>
-                    <dd className="text-sm text-forest-800 font-medium">
-                      {val}
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
-          </div>
+            {/* Fix #6 — Booked card body has red tinted background */}
+            <div className={`px-4 py-4
+              ${isBooked   ? "bg-red-50"   : ""}
+              ${isReserved ? "bg-amber-50/60" : ""}
+              ${isAvail    ? "bg-white"    : ""}
+            `}>
+              {/* Fix #9 — 2-col grid, good spacing, readable text */}
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+                {headers.map((header) => {
+                  const val = plot[header];
+                  if (!val || val.trim() === "") return null;
+                  return (
+                    <div key={header} className="col-span-1 min-w-0">
+                      <dt className="text-xs font-semibold uppercase tracking-wide mb-0.5
+                        truncate
+                        ${isBooked ? 'text-red-400' : 'text-forest-400'}">
+                        {header}
+                      </dt>
+                      <dd className={`text-sm font-medium break-words
+                        ${isBooked ? "text-red-900" : "text-forest-800"}
+                      `}>
+                        {val}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </div>
 
-          {/* Card footer — action */}
-          <div className="px-4 pb-4">
-            {plot.status === "Available" ? (
-              <a
-                href={buildWhatsAppUrl(plot)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl
-                  bg-forest-700 text-white text-sm font-medium
-                  hover:bg-forest-600 active:bg-forest-800
-                  transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                </svg>
-                Enquire on WhatsApp
-              </a>
-            ) : (
-              <div
-                className={`flex items-center justify-center py-2.5 rounded-xl text-sm font-medium
-                  ${plot.status === "Booked" ? "bg-red-50 text-red-500" : "bg-amber-50 text-amber-600"}
-                `}
-              >
-                {plot.status === "Booked" ? "This plot is sold" : "Currently on hold"}
-              </div>
-            )}
+            {/* Action footer */}
+            <div className={`px-4 pb-4
+              ${isBooked   ? "bg-red-50"      : ""}
+              ${isReserved ? "bg-amber-50/60" : ""}
+              ${isAvail    ? "bg-white"        : ""}
+            `}>
+              {isAvail ? (
+                <a
+                  href={buildWhatsAppUrl(plot)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl
+                    bg-forest-700 text-white text-sm font-medium min-h-[48px]
+                    hover:bg-forest-600 active:bg-forest-800
+                    transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  {WA_ICON}
+                  Enquire on WhatsApp
+                </a>
+              ) : isBooked ? (
+                // Fix #6 — full red "Booked / Sold" footer
+                <div className="flex items-center justify-center gap-2 py-3 rounded-xl min-h-[48px]
+                  bg-red-600 text-white text-sm font-semibold">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                  </svg>
+                  This Plot is Booked
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2 py-3 rounded-xl min-h-[48px]
+                  bg-amber-100 text-amber-800 text-sm font-semibold">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Currently Reserved
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
