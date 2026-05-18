@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-body bg-[#f7f5f0] text-forest-900 antialiased;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .stat-card {
+    @apply relative overflow-hidden rounded-2xl p-5 bg-white shadow-card
+      transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  .badge-available {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
+      bg-forest-50 text-forest-700 border border-forest-200;
+  }
+
+  .badge-booked {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
+      bg-red-50 text-red-700 border border-red-200;
+  }
+
+  .badge-reserved {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
+      bg-amber-50 text-amber-700 border border-amber-200;
+  }
+
+  .filter-btn {
+    @apply px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+      border border-forest-200 text-forest-700 bg-white hover:bg-forest-50
+      hover:border-forest-400 focus:outline-none focus:ring-2 focus:ring-forest-300;
+  }
+
+  .filter-btn-active {
+    @apply px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+      bg-forest-700 text-white border border-forest-700
+      focus:outline-none focus:ring-2 focus:ring-forest-300;
+  }
+
+  .enquire-btn {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+      bg-forest-700 text-white hover:bg-forest-600 active:bg-forest-800
+      transition-all duration-200 shadow-sm hover:shadow-md;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-sm text-forest-800 whitespace-nowrap;
+  }
+
+  .table-header {
+    @apply px-4 py-3 text-left text-xs font-semibold text-forest-600
+      uppercase tracking-wider whitespace-nowrap;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f0ede6;
+}
+::-webkit-scrollbar-thumb {
+  background: #96c196;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3d7a3d;
+}
+
+/* Texture overlay on header */
+.hero-texture {
+  background-image:
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Smooth table row transitions */
+.plot-row {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Mobile card styles */
+.plot-card {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Loading skeleton */
+@keyframes shimmer {
+  0% { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    to right,
+    #f0ede6 8%,
+    #e8e3d8 18%,
+    #f0ede6 33%
+  );
+  background-size: 800px 104px;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+}
