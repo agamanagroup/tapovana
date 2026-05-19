@@ -1,11 +1,9 @@
 /**
  * components/PlotCards.jsx
- * Fix #5 — removed # row number
- * Fix #6 — Booked = full red card background
- * Fix #9 — highly mobile responsive with better spacing & touch targets
+ * Enhancement: category color strip on each card
  */
 import StatusBadge from "./StatusBadge";
-import { buildWhatsAppUrl } from "../lib/fetchSheets";
+import { buildWhatsAppUrl, PLOT_CATEGORIES } from "../lib/fetchSheets";
 
 const WA_ICON = (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
@@ -24,7 +22,7 @@ export default function PlotCards({ plots, headers }) {
           </svg>
         </div>
         <p className="text-forest-600 font-medium font-display text-lg">No plots found</p>
-        <p className="text-forest-400 text-sm mt-1">Try adjusting your search</p>
+        <p className="text-forest-400 text-sm mt-1">Try adjusting your search or filters</p>
       </div>
     );
   }
@@ -35,50 +33,69 @@ export default function PlotCards({ plots, headers }) {
         const isBooked   = plot.status === "Booked";
         const isReserved = plot.status === "Reserved";
         const isAvail    = plot.status === "Available";
+        const catKey     = plot.category;
+        const cat        = catKey ? PLOT_CATEGORIES[catKey] : null;
 
         return (
           <div
             key={plot._id}
             className={`plot-card rounded-2xl overflow-hidden shadow-card transition-all duration-300
-              ${isBooked   ? "border-2 border-red-300"    : ""}
-              ${isReserved ? "border-2 border-amber-300"  : ""}
-              ${isAvail    ? "border border-forest-100"   : ""}
+              ${isBooked   ? "border-2 border-red-300"   : ""}
+              ${isReserved ? "border-2 border-amber-300" : ""}
+              ${isAvail    ? "border border-forest-100"  : ""}
             `}
           >
-            {/* Card header strip */}
+            {/* Category color bar at top */}
+            {cat && (
+              <div
+                className="h-1.5 w-full"
+                style={{ backgroundColor: cat.color }}
+              />
+            )}
+
+            {/* Card header */}
             <div className={`px-4 py-3 flex items-center justify-between
-              ${isAvail    ? "bg-forest-900"  : ""}
-              ${isBooked   ? "bg-red-700"     : ""}
-              ${isReserved ? "bg-amber-700"   : ""}
+              ${isAvail    ? "bg-forest-900" : ""}
+              ${isBooked   ? "bg-red-700"    : ""}
+              ${isReserved ? "bg-amber-700"  : ""}
             `}>
-              {/* Fix #5 — no # number, just plot name */}
-              <span className="text-white font-display text-lg font-medium leading-tight">
-                {plot["Plot Name"] || plot["Name"] || plot["Plot No"] || "Plot"}
-              </span>
-              <StatusBadge status={plot.status}/>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-white font-display text-lg font-medium leading-tight truncate">
+                  {plot["Plot Name"] || plot["Name"] || plot["Plot No"] || "Plot"}
+                </span>
+                {/* Category badge */}
+                {cat && (
+                  <span
+                    className="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: cat.color, color: cat.textColor }}
+                  >
+                    {cat.label}
+                  </span>
+                )}
+              </div>
+              <div className="shrink-0 ml-2">
+                <StatusBadge status={plot.status}/>
+              </div>
             </div>
 
-            {/* Fix #6 — Booked card body has red tinted background */}
+            {/* Card body */}
             <div className={`px-4 py-4
-              ${isBooked   ? "bg-red-50"   : ""}
+              ${isBooked   ? "bg-red-50"      : ""}
               ${isReserved ? "bg-amber-50/60" : ""}
-              ${isAvail    ? "bg-white"    : ""}
+              ${isAvail    ? "bg-white"        : ""}
             `}>
-              {/* Fix #9 — 2-col grid, good spacing, readable text */}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
                 {headers.map((header) => {
                   const val = plot[header];
                   if (!val || val.trim() === "") return null;
                   return (
                     <div key={header} className="col-span-1 min-w-0">
-                      <dt className="text-xs font-semibold uppercase tracking-wide mb-0.5
-                        truncate
-                        ${isBooked ? 'text-red-400' : 'text-forest-400'}">
+                      <dt className={`text-xs font-semibold uppercase tracking-wide mb-0.5 truncate
+                        ${isBooked ? "text-red-400" : "text-forest-400"}`}>
                         {header}
                       </dt>
                       <dd className={`text-sm font-medium break-words
-                        ${isBooked ? "text-red-900" : "text-forest-800"}
-                      `}>
+                        ${isBooked ? "text-red-900" : "text-forest-800"}`}>
                         {val}
                       </dd>
                     </div>
@@ -98,16 +115,14 @@ export default function PlotCards({ plots, headers }) {
                   href={buildWhatsAppUrl(plot)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl
-                    bg-forest-700 text-white text-sm font-medium min-h-[48px]
-                    hover:bg-forest-600 active:bg-forest-800
-                    transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl min-h-[48px]
+                    bg-forest-700 text-white text-sm font-medium
+                    hover:bg-forest-600 active:bg-forest-800 transition-all duration-200"
                 >
                   {WA_ICON}
                   Enquire on WhatsApp
                 </a>
               ) : isBooked ? (
-                // Fix #6 — full red "Booked / Sold" footer
                 <div className="flex items-center justify-center gap-2 py-3 rounded-xl min-h-[48px]
                   bg-red-600 text-white text-sm font-semibold">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

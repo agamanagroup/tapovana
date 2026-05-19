@@ -1,22 +1,20 @@
 /**
  * components/PlotTable.jsx
- * Fix #5 — removed # row number column
- * Fix #4 — WhatsApp uses buildWhatsAppUrl (number already embedded)
+ * Enhancement: Category color left-border + badge column
  */
 import StatusBadge from "./StatusBadge";
-import { buildWhatsAppUrl } from "../lib/fetchSheets";
+import { buildWhatsAppUrl, PLOT_CATEGORIES } from "../lib/fetchSheets";
 
 function colWidth(header) {
   const h = header.toLowerCase();
   if (h.includes("no") || h.includes("num") || h.includes("sl") || h.includes("sr")) return "72px";
-  if (h.includes("name"))                           return "140px";
-  if (h.includes("sq") || h.includes("sqft"))       return "100px";
-  if (h.includes("ac") || h.includes("acre"))       return "80px";
-  if (h.includes("total") || h.includes("amount"))  return "120px";
-  if (h.includes("price") || h.includes("rate") || h.includes("cost")) return "110px";
-  if (h.includes("area"))                           return "90px";
-  if (h.includes("type") || h.includes("facing"))   return "90px";
-  return "100px";
+  if (h.includes("name"))                           return "130px";
+  if (h.includes("sq") || h.includes("sqft"))       return "95px";
+  if (h.includes("ac") || h.includes("acre"))       return "75px";
+  if (h.includes("total") || h.includes("amount"))  return "115px";
+  if (h.includes("price") || h.includes("rate") || h.includes("cost")) return "105px";
+  if (h.includes("area"))                           return "85px";
+  return "95px";
 }
 
 function formatCell(value) {
@@ -43,62 +41,90 @@ export default function PlotTable({ plots, headers }) {
 
   return (
     <div className="overflow-x-auto rounded-xl border border-forest-100 shadow-table">
-      <table className="divide-y divide-forest-100 bg-white" style={{ tableLayout: "fixed", width: "100%", minWidth: "600px" }}>
+      <table className="divide-y divide-forest-100 bg-white" style={{ tableLayout: "fixed", width: "100%", minWidth: "620px" }}>
         <colgroup>
-          {headers.map((header) => (
-            <col key={header} style={{ width: colWidth(header) }}/>
-          ))}
-          <col style={{ width: "110px" }}/>
+          {/* Category dot column */}
+          <col style={{ width: "6px" }}/>
+          {headers.map((h) => <col key={h} style={{ width: colWidth(h) }}/>)}
           <col style={{ width: "100px" }}/>
+          <col style={{ width: "100px" }}/>
+          <col style={{ width: "95px" }}/>
         </colgroup>
 
         <thead className="bg-forest-900 sticky top-0 z-10">
           <tr>
-            {/* Fix #5 — # column removed */}
+            <th className="p-0"/>
             {headers.map((header) => (
               <th key={header} className="table-header text-forest-300 truncate">{header}</th>
             ))}
+            <th className="table-header text-forest-300">Category</th>
             <th className="table-header text-forest-300">Status</th>
             <th className="table-header text-forest-300">Action</th>
           </tr>
         </thead>
 
         <tbody className="divide-y divide-forest-50">
-          {plots.map((plot) => (
-            <tr
-              key={plot._id}
-              className={[
-                "plot-row",
-                plot.status === "Available" ? "hover:bg-forest-50/50" : "",
-                plot.status === "Booked"    ? "opacity-70 bg-red-50/40 hover:bg-red-50/60" : "",
-                plot.status === "Reserved"  ? "bg-amber-50/30 hover:bg-amber-50/50" : "",
-              ].join(" ")}
-            >
-              {/* Fix #5 — no # cell */}
-              {headers.map((header) => (
-                <td key={header} className="table-cell truncate" title={plot[header] || ""}>
-                  {formatCell(plot[header])}
+          {plots.map((plot) => {
+            const catKey = plot.category;
+            const cat    = catKey ? PLOT_CATEGORIES[catKey] : null;
+
+            return (
+              <tr
+                key={plot._id}
+                className={[
+                  "plot-row",
+                  plot.status === "Available" ? "hover:bg-forest-50/50" : "",
+                  plot.status === "Booked"    ? "opacity-70 bg-red-50/40 hover:bg-red-50/60" : "",
+                  plot.status === "Reserved"  ? "bg-amber-50/30 hover:bg-amber-50/50" : "",
+                ].join(" ")}
+              >
+                {/* Category color left-bar */}
+                <td className="p-0 w-1.5">
+                  <div
+                    className="h-full w-1.5 min-h-[44px]"
+                    style={{ backgroundColor: cat ? cat.color : "transparent" }}
+                  />
                 </td>
-              ))}
-              <td className="table-cell">
-                <StatusBadge status={plot.status}/>
-              </td>
-              <td className="table-cell">
-                {plot.status === "Available" ? (
-                  <a href={buildWhatsAppUrl(plot)} target="_blank" rel="noopener noreferrer" className="enquire-btn">
-                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    Enquire
-                  </a>
-                ) : (
-                  <span className="text-xs text-forest-300 italic">
-                    {plot.status === "Booked" ? "Sold" : "On hold"}
-                  </span>
-                )}
-              </td>
-            </tr>
-          ))}
+
+                {headers.map((header) => (
+                  <td key={header} className="table-cell truncate" title={plot[header] || ""}>
+                    {formatCell(plot[header])}
+                  </td>
+                ))}
+
+                {/* Category badge */}
+                <td className="table-cell">
+                  {cat ? (
+                    <span
+                      className="inline-block px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
+                      style={{ backgroundColor: cat.color, color: cat.textColor }}
+                    >
+                      {cat.label}
+                    </span>
+                  ) : (
+                    <span className="text-forest-300 text-xs">—</span>
+                  )}
+                </td>
+
+                <td className="table-cell"><StatusBadge status={plot.status}/></td>
+
+                <td className="table-cell">
+                  {plot.status === "Available" ? (
+                    <a href={buildWhatsAppUrl(plot)} target="_blank" rel="noopener noreferrer" className="enquire-btn">
+                      <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                      Enquire
+                    </a>
+                  ) : (
+                    <span className="text-xs text-forest-300 italic">
+                      {plot.status === "Booked" ? "Sold" : "On hold"}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
