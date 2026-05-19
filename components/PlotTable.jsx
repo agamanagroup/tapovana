@@ -1,25 +1,50 @@
 /**
- * components/PlotTable.jsx
- * Enhancement: Category color left-border + badge column
+ * PlotTable.jsx
+ * Fix 4: Per Acre (₹) column → shows "58 Lakhs" / "60 Lakhs" / "62 Lakhs" on desktop
+ * Mobile (PlotCards) always shows raw value — no change needed there
  */
 import StatusBadge from "./StatusBadge";
-import { buildWhatsAppUrl, PLOT_CATEGORIES } from "../lib/fetchSheets";
+import { buildWhatsAppUrl, PLOT_CATEGORIES, parseNumber } from "../lib/fetchSheets";
 
 function colWidth(header) {
   const h = header.toLowerCase();
-  if (h.includes("no") || h.includes("num") || h.includes("sl") || h.includes("sr")) return "72px";
-  if (h.includes("name"))                           return "130px";
-  if (h.includes("sq") || h.includes("sqft"))       return "95px";
-  if (h.includes("ac") || h.includes("acre"))       return "75px";
-  if (h.includes("total") || h.includes("amount"))  return "115px";
-  if (h.includes("price") || h.includes("rate") || h.includes("cost")) return "105px";
-  if (h.includes("area"))                           return "85px";
-  return "95px";
+  if (h.includes("plot no") || h.includes("plot n"))        return "68px";
+  if (h.includes("plot name") || h === "name")              return "110px";
+  if (h.includes("measurement") || h.includes("measurem"))  return "95px";
+  if (h.includes("buffer"))                                  return "78px";
+  if (h.includes("total") && h.includes("area"))             return "88px";
+  if (h.includes("total") && h.includes("price"))            return "110px";
+  if (h.includes("per ac") || h.includes("per acre"))        return "85px";
+  if (h.includes("area"))                                    return "82px";
+  if (h.includes("price") || h.includes("rate"))             return "95px";
+  return "88px";
 }
 
-function formatCell(value) {
+/** Detect the Per Acre column — exact match "per acre (₹)" or contains "per ac" */
+function isPerAcreCol(header) {
+  const h = header.toLowerCase().trim();
+  return (
+    h === "per acre (₹)" ||
+    h === "per acre price" ||
+    h === "per acre rate" ||
+    h.startsWith("per ac") ||
+    (h.includes("per") && h.includes("acre"))
+  );
+}
+
+/** Format per-acre number → "58 Lakhs", "60 Lakhs", "62 Lakhs" */
+function formatPerAcre(value) {
+  const num = parseNumber(value);
+  if (!num || num < 100000) return value;
+  const lakhs = Math.round(num / 100000);
+  return `${lakhs} Lakhs`;
+}
+
+/** Format a table cell — applies per-acre formatting only on desktop (this component) */
+function formatCell(header, value) {
   if (!value || value.toString().trim() === "")
     return <span className="text-forest-300 select-none">—</span>;
+  if (isPerAcreCol(header)) return formatPerAcre(value);
   return value;
 }
 
@@ -41,14 +66,14 @@ export default function PlotTable({ plots, headers }) {
 
   return (
     <div className="overflow-x-auto rounded-xl border border-forest-100 shadow-table">
-      <table className="divide-y divide-forest-100 bg-white" style={{ tableLayout: "fixed", width: "100%", minWidth: "620px" }}>
+      <table className="divide-y divide-forest-100 bg-white"
+        style={{ tableLayout: "fixed", width: "100%", minWidth: "700px" }}>
         <colgroup>
-          {/* Category dot column */}
-          <col style={{ width: "6px" }}/>
+          <col style={{ width: "5px" }}/>
           {headers.map((h) => <col key={h} style={{ width: colWidth(h) }}/>)}
+          <col style={{ width: "88px" }}/>
           <col style={{ width: "100px" }}/>
-          <col style={{ width: "100px" }}/>
-          <col style={{ width: "95px" }}/>
+          <col style={{ width: "88px" }}/>
         </colgroup>
 
         <thead className="bg-forest-900 sticky top-0 z-10">
@@ -65,9 +90,7 @@ export default function PlotTable({ plots, headers }) {
 
         <tbody className="divide-y divide-forest-50">
           {plots.map((plot) => {
-            const catKey = plot.category;
-            const cat    = catKey ? PLOT_CATEGORIES[catKey] : null;
-
+            const cat = plot.category ? PLOT_CATEGORIES[plot.category] : null;
             return (
               <tr
                 key={plot._id}
@@ -78,39 +101,34 @@ export default function PlotTable({ plots, headers }) {
                   plot.status === "Reserved"  ? "bg-amber-50/30 hover:bg-amber-50/50" : "",
                 ].join(" ")}
               >
-                {/* Category color left-bar */}
-                <td className="p-0 w-1.5">
-                  <div
-                    className="h-full w-1.5 min-h-[44px]"
-                    style={{ backgroundColor: cat ? cat.color : "transparent" }}
-                  />
+                {/* Category colour bar */}
+                <td className="p-0">
+                  <div className="h-full min-h-[46px] w-[5px]"
+                    style={{ backgroundColor: cat ? cat.color : "transparent" }}/>
                 </td>
 
                 {headers.map((header) => (
                   <td key={header} className="table-cell truncate" title={plot[header] || ""}>
-                    {formatCell(plot[header])}
+                    {formatCell(header, plot[header])}
                   </td>
                 ))}
 
                 {/* Category badge */}
                 <td className="table-cell">
                   {cat ? (
-                    <span
-                      className="inline-block px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-                      style={{ backgroundColor: cat.color, color: cat.textColor }}
-                    >
+                    <span className="inline-block px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
+                      style={{ backgroundColor: cat.color, color: cat.textColor }}>
                       {cat.label}
                     </span>
-                  ) : (
-                    <span className="text-forest-300 text-xs">—</span>
-                  )}
+                  ) : <span className="text-forest-300 text-xs">—</span>}
                 </td>
 
                 <td className="table-cell"><StatusBadge status={plot.status}/></td>
 
                 <td className="table-cell">
                   {plot.status === "Available" ? (
-                    <a href={buildWhatsAppUrl(plot)} target="_blank" rel="noopener noreferrer" className="enquire-btn">
+                    <a href={buildWhatsAppUrl(plot)} target="_blank" rel="noopener noreferrer"
+                      className="enquire-btn">
                       <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                       </svg>

@@ -1,36 +1,35 @@
 /**
- * components/FilterBar.jsx
- * Enhancements: Total Area + Total Price dropdowns added
+ * FilterBar.jsx — filter labels: "Area" and "Prices" as requested
  */
-
 const STATUS_OPTIONS = [
-  { value: "All",       label: "All Plots" },
-  { value: "Available", label: "Available" },
-  { value: "Booked",    label: "Booked"    },
-  { value: "Reserved",  label: "Reserved"  },
+  { value: "All",       label: "All Plots"  },
+  { value: "Available", label: "Available"  },
+  { value: "Booked",    label: "Booked"     },
+  { value: "Reserved",  label: "Reserved"   },
 ];
 
-const SELECT_CLS = `
-  h-[44px] pl-3 pr-8 rounded-full border border-forest-200 bg-white
+const SEL = `h-[44px] pl-3 pr-8 rounded-full border border-forest-200 bg-white
   text-sm text-forest-800 focus:outline-none focus:ring-2 focus:ring-forest-300
-  focus:border-forest-400 transition-all duration-200 appearance-none cursor-pointer
-  bg-no-repeat bg-right
-`;
+  focus:border-forest-400 transition-all duration-200 appearance-none cursor-pointer`;
 
-// Tiny chevron for selects
 const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23619e61' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`;
 
 export default function FilterBar({
   filter, onFilter,
   search, onSearch,
-  areaFilter,  onAreaFilter,  areaOptions,
-  priceFilter, onPriceFilter, priceOptions,
+  areaFilter,  onAreaFilter,  areaOptions  = [],
+  priceFilter, onPriceFilter, priceOptions = [],
   totalFiltered,
 }) {
+  const normPrice = priceOptions.map((o) =>
+    typeof o === "string" ? { value: o, label: o } : o
+  );
+  const hasActive = areaFilter || priceFilter;
+
   return (
     <div className="flex flex-col gap-3">
 
-      {/* Row 1 — Status filters */}
+      {/* Row 1 — Status pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
         {STATUS_OPTIONS.map((opt) => (
           <button
@@ -48,18 +47,19 @@ export default function FilterBar({
         ))}
       </div>
 
-      {/* Row 2 — Area + Price dropdowns */}
-      <div className="flex flex-wrap gap-2">
-        {/* Total Area filter */}
-        {areaOptions && areaOptions.length > 0 && (
+      {/* Row 2 — Area + Prices dropdowns */}
+      <div className="flex flex-wrap gap-2 items-center">
+
+        {/* Area — Total Area values only */}
+        {areaOptions.length > 0 && (
           <div className="relative">
             <select
               value={areaFilter}
               onChange={(e) => onAreaFilter(e.target.value)}
-              className={SELECT_CLS}
-              style={{ backgroundImage: CHEVRON, backgroundPosition: "calc(100% - 10px) center" }}
+              className={SEL}
+              style={{ backgroundImage: CHEVRON, backgroundPosition: "calc(100% - 10px) center", backgroundRepeat: "no-repeat" }}
             >
-              <option value="">All Areas</option>
+              <option value="">Area</option>
               {areaOptions.map((v) => (
                 <option key={v} value={v}>{v}</option>
               ))}
@@ -67,31 +67,30 @@ export default function FilterBar({
           </div>
         )}
 
-        {/* Total Price filter */}
-        {priceOptions && priceOptions.length > 0 && (
+        {/* Prices — Total Price values formatted as ₹XXL */}
+        {normPrice.length > 0 && (
           <div className="relative">
             <select
               value={priceFilter}
               onChange={(e) => onPriceFilter(e.target.value)}
-              className={SELECT_CLS}
-              style={{ backgroundImage: CHEVRON, backgroundPosition: "calc(100% - 10px) center" }}
+              className={SEL}
+              style={{ backgroundImage: CHEVRON, backgroundPosition: "calc(100% - 10px) center", backgroundRepeat: "no-repeat" }}
             >
-              <option value="">All Prices</option>
-              {priceOptions.map((v) => (
-                <option key={v} value={v}>{v}</option>
+              <option value="">Prices</option>
+              {normPrice.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
           </div>
         )}
 
-        {/* Clear filters */}
-        {(areaFilter || priceFilter) && (
+        {hasActive && (
           <button
             onClick={() => { onAreaFilter(""); onPriceFilter(""); }}
             className="min-h-[44px] px-3 py-2 rounded-full text-xs font-medium border border-red-200
               text-red-600 bg-red-50 hover:bg-red-100 transition-all duration-200 active:scale-95"
           >
-            Clear filters ×
+            Clear ×
           </button>
         )}
       </div>
@@ -115,10 +114,8 @@ export default function FilterBar({
               focus:outline-none focus:ring-2 focus:ring-forest-300 focus:border-forest-400 transition-all duration-200"
           />
           {search && (
-            <button
-              onClick={() => onSearch("")}
-              className="absolute inset-y-0 right-3 flex items-center text-forest-400 hover:text-forest-600"
-            >
+            <button onClick={() => onSearch("")}
+              className="absolute inset-y-0 right-3 flex items-center text-forest-400 hover:text-forest-600">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
               </svg>
