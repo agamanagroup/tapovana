@@ -6,6 +6,7 @@ import FilterBar from "../components/FilterBar";
 import PlotTable from "../components/PlotTable";
 import PlotCards from "../components/PlotCards";
 import CategoryLegend from "../components/CategoryLegend";
+import VideoSection from "../components/VideoSection";
 import BufferAreaNote from "../components/BufferAreaNote";
 import LoadingState from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
@@ -13,7 +14,7 @@ import Footer from "../components/Footer";
 import { useSheetData } from "../lib/useSheetData";
 import { parseNumber } from "../lib/fetchSheets";
 
-/** Format raw rupee number → "₹43.5L", "₹67.5L" */
+/** Format raw rupee number → "₹43.5L", "₹67.5L" for price dropdown */
 function formatLakhsLabel(raw) {
   const num = parseNumber(raw);
   if (!num) return raw;
@@ -21,37 +22,25 @@ function formatLakhsLabel(raw) {
   return `₹${l % 1 === 0 ? l.toFixed(0) : l.toFixed(1)}L`;
 }
 
-/**
- * Find TOTAL AREA column key — must contain "total"+"area" OR be exactly "total area"
- * Explicitly EXCLUDES "Buffer Area"
- */
+/** Find TOTAL AREA column — must include both "total" + "area", explicitly excludes "buffer" */
 function findTotalAreaKey(headers) {
   const c = (h) => h.toLowerCase().replace(/\s+/g, " ").trim();
-  // Priority 1: exact match
-  let k = headers.find((h) => c(h) === "total area");
-  if (k) return k;
-  // Priority 2: contains both "total" and "area" but NOT "buffer"
-  k = headers.find((h) => c(h).includes("total") && c(h).includes("area") && !c(h).includes("buffer"));
-  if (k) return k;
-  // Priority 3: contains "area" but NOT "buffer"
-  k = headers.find((h) => c(h).includes("area") && !c(h).includes("buffer"));
-  if (k) return k;
-  return null;
+  return (
+    headers.find((h) => c(h) === "total area") ||
+    headers.find((h) => c(h).includes("total") && c(h).includes("area") && !c(h).includes("buffer")) ||
+    headers.find((h) => c(h).includes("area") && !c(h).includes("buffer")) ||
+    null
+  );
 }
 
-/**
- * Find TOTAL PRICE column key — must contain "price"
- * Explicitly EXCLUDES "Per Acre", "Buffer Area", plain "Area" columns
- */
+/** Find TOTAL PRICE column — must include "price", explicitly excludes "acre" / "per" */
 function findTotalPriceKey(headers) {
   const c = (h) => h.toLowerCase().replace(/\s+/g, " ").trim();
-  // Priority 1: contains both "total" and "price"
-  let k = headers.find((h) => c(h).includes("total") && c(h).includes("price"));
-  if (k) return k;
-  // Priority 2: contains "price" but NOT "acre"/"per"
-  k = headers.find((h) => c(h).includes("price") && !c(h).includes("acre") && !c(h).includes("per"));
-  if (k) return k;
-  return null;
+  return (
+    headers.find((h) => c(h).includes("total") && c(h).includes("price")) ||
+    headers.find((h) => c(h).includes("price") && !c(h).includes("acre") && !c(h).includes("per")) ||
+    null
+  );
 }
 
 export default function Home() {
@@ -68,7 +57,7 @@ export default function Home() {
     setRefreshing(false);
   }, [refresh]);
 
-  // Unique sorted TOTAL AREA values
+  // Unique sorted Total Area values
   const areaOptions = useMemo(() => {
     const key = findTotalAreaKey(headers);
     if (!key) return [];
@@ -76,7 +65,7 @@ export default function Home() {
     return vals.sort((a, b) => parseNumber(a) - parseNumber(b));
   }, [plots, headers]);
 
-  // Unique sorted TOTAL PRICE values with formatted labels
+  // Unique sorted Total Price values with formatted labels
   const priceOptions = useMemo(() => {
     const key = findTotalPriceKey(headers);
     if (!key) return [];
@@ -88,22 +77,26 @@ export default function Home() {
 
   const filteredPlots = useMemo(() => {
     let result = plots;
+
     if (filter !== "All") result = result.filter((p) => p.status === filter);
 
     if (areaFilter) {
       const key = findTotalAreaKey(headers);
       if (key) result = result.filter((p) => p[key] === areaFilter);
     }
+
     if (priceFilter) {
       const key = findTotalPriceKey(headers);
       if (key) result = result.filter((p) => p[key] === priceFilter);
     }
+
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter((plot) =>
         Object.values(plot).some((v) => v && v.toString().toLowerCase().includes(q))
       );
     }
+
     return result;
   }, [plots, headers, filter, areaFilter, priceFilter, search]);
 
@@ -121,27 +114,34 @@ export default function Home() {
         <main className="flex-1">
           <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8">
 
+            {/* Stats */}
             <section className="mb-5 sm:mb-6 animate-slide-up">
               <StatsCards stats={stats} loading={loading}/>
             </section>
 
+            {/* Category legend */}
             {!loading && !error && (
               <section className="mb-5 animate-fade-in">
                 <CategoryLegend/>
               </section>
             )}
 
+            {/* Videos */}
+            {!loading && !error && <VideoSection/>}
+
+            {/* Plot listings divider */}
             <div className="flex items-center gap-4 mb-4 sm:mb-5">
               <div className="flex-1 h-px bg-forest-100"/>
               <span className="text-xs font-semibold uppercase tracking-widest text-forest-400">Plot Listings</span>
               <div className="flex-1 h-px bg-forest-100"/>
             </div>
 
+            {/* Filters */}
             {!loading && !error && (
               <section className="mb-4 sm:mb-5 animate-fade-in">
                 <FilterBar
-                  filter={filter}        onFilter={setFilter}
-                  search={search}        onSearch={setSearch}
+                  filter={filter}           onFilter={setFilter}
+                  search={search}           onSearch={setSearch}
                   areaFilter={areaFilter}   onAreaFilter={setAreaFilter}   areaOptions={areaOptions}
                   priceFilter={priceFilter} onPriceFilter={setPriceFilter} priceOptions={priceOptions}
                   totalFiltered={filteredPlots.length}
@@ -149,28 +149,36 @@ export default function Home() {
               </section>
             )}
 
+            {/* Content */}
             {loading ? (
               <LoadingState/>
             ) : error ? (
               <ErrorState error={error} onRetry={handleRefresh}/>
             ) : (
               <>
+                {/* Desktop table */}
                 <div className="hidden md:block animate-slide-up">
                   <PlotTable plots={filteredPlots} headers={headers}/>
                 </div>
+
+                {/* Mobile cards */}
                 <div className="md:hidden animate-slide-up">
                   <PlotCards plots={filteredPlots} headers={headers}/>
                 </div>
+
                 {filteredPlots.length > 0 && (
                   <p className="mt-3 text-xs text-forest-400 text-right">
                     Showing {filteredPlots.length} of {plots.length} plots
                   </p>
                 )}
+
+                {/* Buffer area note */}
                 <BufferAreaNote/>
               </>
             )}
           </div>
         </main>
+
         <Footer/>
       </div>
     </>
