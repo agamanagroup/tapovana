@@ -1,12 +1,8 @@
 /**
  * pages/index.js
  *
- * Env variable controls:
- *   NEXT_PUBLIC_SHOW_PRICE=false  → hides Total Price column + Prices filter (default: true)
- *   NEXT_PUBLIC_SHOW_PHASE_MESSAGE=true → shows Phase 1 closure message (default: true)
- *
- * To re-enable price in October:
- *   Vercel → Settings → Environment Variables → NEXT_PUBLIC_SHOW_PRICE → set to "true" → Redeploy
+ * CURRENT: Price hidden, Phase message visible
+ * In October — Claude will give you a new index.js with price back on
  */
 import Head from "next/head";
 import { useState, useMemo, useCallback } from "react";
@@ -24,10 +20,9 @@ import Footer from "../components/Footer";
 import { useSheetData } from "../lib/useSheetData";
 import { parseNumber } from "../lib/fetchSheets";
 
-// ── Feature flags ────────────────────────────────────────────────────────────
-// Set to "false" in Vercel env vars to hide; "true" to show
-const SHOW_PRICE         = process.env.NEXT_PUBLIC_SHOW_PRICE         !== "false";
-const SHOW_PHASE_MESSAGE = process.env.NEXT_PUBLIC_SHOW_PHASE_MESSAGE !== "false";
+// ── Hardcoded flags — change these in October ────────────────────────────────
+const SHOW_PRICE         = false;  // ← set to true in October to restore pricing
+const SHOW_PHASE_MESSAGE = true;   // ← set to false in October to hide the message
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function formatLakhsLabel(raw) {
@@ -78,7 +73,7 @@ export default function Home() {
     return priceKey ? headers.filter(h => h !== priceKey) : headers;
   }, [headers]);
 
-  // Area filter options — Total Area only (never Buffer Area)
+  // Area filter options
   const areaOptions = useMemo(() => {
     const key = findTotalAreaKey(headers);
     if (!key) return [];
@@ -86,7 +81,7 @@ export default function Home() {
     return vals.sort((a, b) => parseNumber(a) - parseNumber(b));
   }, [plots, headers]);
 
-  // Price filter options — only shown when price is visible
+  // Price filter options — hidden when SHOW_PRICE is false
   const priceOptions = useMemo(() => {
     if (!SHOW_PRICE) return [];
     const key = findTotalPriceKey(headers);
@@ -136,7 +131,7 @@ export default function Home() {
               <StatsCards stats={stats} loading={loading}/>
             </section>
 
-            {/* Phase 1 closure message — between stats and category legend */}
+            {/* Phase 1 closure message */}
             {SHOW_PHASE_MESSAGE && !loading && !error && (
               <section className="mb-5 animate-fade-in">
                 <PhaseMessage/>
@@ -179,22 +174,17 @@ export default function Home() {
               <ErrorState error={error} onRetry={handleRefresh}/>
             ) : (
               <>
-                {/* Desktop table — pass displayHeaders (price stripped if hidden) */}
                 <div className="hidden md:block animate-slide-up">
                   <PlotTable plots={filteredPlots} headers={displayHeaders}/>
                 </div>
-
-                {/* Mobile cards — pass displayHeaders */}
                 <div className="md:hidden animate-slide-up">
                   <PlotCards plots={filteredPlots} headers={displayHeaders}/>
                 </div>
-
                 {filteredPlots.length > 0 && (
                   <p className="mt-3 text-xs text-forest-400 text-right">
                     Showing {filteredPlots.length} of {plots.length} plots
                   </p>
                 )}
-
                 <BufferAreaNote/>
               </>
             )}
