@@ -1,7 +1,5 @@
 /**
  * components/PhaseMessage.jsx
- * Subtle Phase 1 closure announcement — shown between stats and category legend.
- * Controlled via NEXT_PUBLIC_SHOW_PHASE_MESSAGE env variable.
  */
 export default function PhaseMessage() {
   return (
@@ -9,7 +7,7 @@ export default function PhaseMessage() {
       <div className="flex gap-4 items-start p-4 sm:p-5 rounded-2xl
         bg-forest-50 border border-forest-200">
 
-        {/* Leaf icon */}
+        {/* Icon */}
         <div className="shrink-0 mt-0.5 w-8 h-8 rounded-lg bg-forest-900
           flex items-center justify-center">
           <svg className="w-4 h-4 text-cream-300" fill="none" stroke="currentColor"
@@ -23,10 +21,10 @@ export default function PhaseMessage() {
 
         {/* Text */}
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-forest-800 mb-1">
+          <p className="text-sm font-semibold text-forest-900 mb-1">
             Phase 1 Bookings Successfully Closed
           </p>
-          <p className="text-sm text-forest-600 leading-relaxed font-light italic font-display">
+          <p className="text-sm text-forest-800 leading-relaxed font-display italic">
             Thank you for the overwhelming response and trust in Tapovana.
             50% of Tapovana Farmland has now been booked by our early members.
             We are deeply grateful for your trust, enthusiasm, and belief in this vision.
