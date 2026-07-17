@@ -1,7 +1,7 @@
 /**
  * pages/index.js
  *
- * CURRENT: Price hidden, Phase message visible
+ * CURRENT: Price hidden (Total Price + Per Acre columns), Phase message visible
  * In October — Claude will give you a new index.js with price back on
  */
 import Head from "next/head";
@@ -51,6 +51,25 @@ function findTotalPriceKey(headers) {
   );
 }
 
+/** Finds the Per Acre price column — matches "per acre (₹)", "per acre", "per ac" etc. */
+function findPerAcreKey(headers) {
+  const c = h => h.toLowerCase().replace(/\s+/g, " ").trim();
+  return (
+    headers.find(h => c(h) === "per acre (₹)") ||
+    headers.find(h => c(h).includes("per ac")) ||
+    headers.find(h => c(h).includes("per") && c(h).includes("acre")) ||
+    null
+  );
+}
+
+/** Returns headers with all price-related columns removed */
+function stripPriceColumns(headers) {
+  const totalPriceKey = findTotalPriceKey(headers);
+  const perAcreKey    = findPerAcreKey(headers);
+  const priceKeys     = new Set([totalPriceKey, perAcreKey].filter(Boolean));
+  return headers.filter(h => !priceKeys.has(h));
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const { plots, headers, loading, error, stats, lastUpdated, refresh } = useSheetData();
@@ -66,11 +85,10 @@ export default function Home() {
     setRefreshing(false);
   }, [refresh]);
 
-  // Strip Total Price column from headers when price is hidden
+  // Strip Total Price + Per Acre columns when price is hidden
   const displayHeaders = useMemo(() => {
     if (SHOW_PRICE) return headers;
-    const priceKey = findTotalPriceKey(headers);
-    return priceKey ? headers.filter(h => h !== priceKey) : headers;
+    return stripPriceColumns(headers);
   }, [headers]);
 
   // Area filter options
