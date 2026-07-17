@@ -1,7 +1,18 @@
+/**
+ * pages/index.js
+ *
+ * Env variable controls:
+ *   NEXT_PUBLIC_SHOW_PRICE=false  → hides Total Price column + Prices filter (default: true)
+ *   NEXT_PUBLIC_SHOW_PHASE_MESSAGE=true → shows Phase 1 closure message (default: true)
+ *
+ * To re-enable price in October:
+ *   Vercel → Settings → Environment Variables → NEXT_PUBLIC_SHOW_PRICE → set to "true" → Redeploy
+ */
 import Head from "next/head";
 import { useState, useMemo, useCallback } from "react";
 import Header from "../components/Header";
 import StatsCards from "../components/StatsCards";
+import PhaseMessage from "../components/PhaseMessage";
 import FilterBar from "../components/FilterBar";
 import PlotTable from "../components/PlotTable";
 import PlotCards from "../components/PlotCards";
@@ -13,6 +24,12 @@ import Footer from "../components/Footer";
 import { useSheetData } from "../lib/useSheetData";
 import { parseNumber } from "../lib/fetchSheets";
 
+// ── Feature flags ────────────────────────────────────────────────────────────
+// Set to "false" in Vercel env vars to hide; "true" to show
+const SHOW_PRICE         = process.env.NEXT_PUBLIC_SHOW_PRICE         !== "false";
+const SHOW_PHASE_MESSAGE = process.env.NEXT_PUBLIC_SHOW_PHASE_MESSAGE !== "false";
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function formatLakhsLabel(raw) {
   const num = parseNumber(raw);
   if (!num) return raw;
@@ -39,6 +56,7 @@ function findTotalPriceKey(headers) {
   );
 }
 
+// ── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const { plots, headers, loading, error, stats, lastUpdated, refresh } = useSheetData();
   const [filter,      setFilter]      = useState("All");
@@ -53,6 +71,14 @@ export default function Home() {
     setRefreshing(false);
   }, [refresh]);
 
+  // Strip Total Price column from headers when price is hidden
+  const displayHeaders = useMemo(() => {
+    if (SHOW_PRICE) return headers;
+    const priceKey = findTotalPriceKey(headers);
+    return priceKey ? headers.filter(h => h !== priceKey) : headers;
+  }, [headers]);
+
+  // Area filter options — Total Area only (never Buffer Area)
   const areaOptions = useMemo(() => {
     const key = findTotalAreaKey(headers);
     if (!key) return [];
@@ -60,7 +86,9 @@ export default function Home() {
     return vals.sort((a, b) => parseNumber(a) - parseNumber(b));
   }, [plots, headers]);
 
+  // Price filter options — only shown when price is visible
   const priceOptions = useMemo(() => {
+    if (!SHOW_PRICE) return [];
     const key = findTotalPriceKey(headers);
     if (!key) return [];
     const vals = [...new Set(plots.map(p => p[key]).filter(Boolean))];
@@ -76,7 +104,7 @@ export default function Home() {
       const key = findTotalAreaKey(headers);
       if (key) result = result.filter(p => p[key] === areaFilter);
     }
-    if (priceFilter) {
+    if (priceFilter && SHOW_PRICE) {
       const key = findTotalPriceKey(headers);
       if (key) result = result.filter(p => p[key] === priceFilter);
     }
@@ -103,22 +131,35 @@ export default function Home() {
         <main className="flex-1">
           <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8">
 
+            {/* Stats */}
             <section className="mb-5 sm:mb-6 animate-slide-up">
               <StatsCards stats={stats} loading={loading}/>
             </section>
 
+            {/* Phase 1 closure message — between stats and category legend */}
+            {SHOW_PHASE_MESSAGE && !loading && !error && (
+              <section className="mb-5 animate-fade-in">
+                <PhaseMessage/>
+              </section>
+            )}
+
+            {/* Category legend */}
             {!loading && !error && (
               <section className="mb-5 animate-fade-in">
                 <CategoryLegend/>
               </section>
             )}
 
+            {/* Plot listings divider */}
             <div className="flex items-center gap-4 mb-4 sm:mb-5">
               <div className="flex-1 h-px bg-forest-100"/>
-              <span className="text-xs font-semibold uppercase tracking-widest text-forest-400">Plot Listings</span>
+              <span className="text-xs font-semibold uppercase tracking-widest text-forest-400">
+                Plot Listings
+              </span>
               <div className="flex-1 h-px bg-forest-100"/>
             </div>
 
+            {/* Filters */}
             {!loading && !error && (
               <section className="mb-4 sm:mb-5 animate-fade-in">
                 <FilterBar
@@ -131,23 +172,29 @@ export default function Home() {
               </section>
             )}
 
+            {/* Content */}
             {loading ? (
               <LoadingState/>
             ) : error ? (
               <ErrorState error={error} onRetry={handleRefresh}/>
             ) : (
               <>
+                {/* Desktop table — pass displayHeaders (price stripped if hidden) */}
                 <div className="hidden md:block animate-slide-up">
-                  <PlotTable plots={filteredPlots} headers={headers}/>
+                  <PlotTable plots={filteredPlots} headers={displayHeaders}/>
                 </div>
+
+                {/* Mobile cards — pass displayHeaders */}
                 <div className="md:hidden animate-slide-up">
-                  <PlotCards plots={filteredPlots} headers={headers}/>
+                  <PlotCards plots={filteredPlots} headers={displayHeaders}/>
                 </div>
+
                 {filteredPlots.length > 0 && (
                   <p className="mt-3 text-xs text-forest-400 text-right">
                     Showing {filteredPlots.length} of {plots.length} plots
                   </p>
                 )}
+
                 <BufferAreaNote/>
               </>
             )}
